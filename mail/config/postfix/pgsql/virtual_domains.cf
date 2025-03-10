@@ -1,0 +1,6 @@
+# PostgreSQL configuration for virtual domains
+user = mail
+password = mail
+hosts = postgres
+dbname = mail
+query = SELECT domain FROM postfix_virtual_domains WHERE domain = '%s'

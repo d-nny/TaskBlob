@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for mail, DNS config, and other data
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - server_net
+
+  # Redis for caching and queueing
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - server_net
+
+  # Mail server with DBMail integration (using custom image)
+  mailserver:
+    build:
+      context: ./mail
+      dockerfile: Dockerfile
+    container_name: mailserver
+    restart: always
+    depends_on:
+      - postgres
+    volumes:
+      - mail_data:/var/mail
+      - ./mail/config:/etc/mail
+      - ./ssl:/etc/ssl/mail
+      - ./dkim:/etc/dkim
+    ports:
+      - "25:25"
+      - "465:465"
+      - "587:587"
+      - "110:110"
+      - "995:995"
+      - "143:143"
+      - "993:993"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=mail
+      - DOMAIN=${DOMAIN:-example.com}
+      - ADMIN_EMAIL=admin@${DOMAIN:-example.com}
+    networks:
+      - server_net
+
+  # Webmail interface (Roundcube)
+  webmail:
+    image: roundcube/roundcubemail:latest
+    container_name: webmail
+    restart: always
+    depends_on:
+      - postgres
+      - mailserver
+    volumes:
+      - webmail_data:/var/www/html
+    ports:
+      - "8080:80"
+    environment:
+      - ROUNDCUBEMAIL_DB_TYPE=pgsql
+      - ROUNDCUBEMAIL_DB_HOST=postgres
+      - ROUNDCUBEMAIL_DB_USER=roundcube
+      - ROUNDCUBEMAIL_DB_PASSWORD=${ROUNDCUBE_PASSWORD:-roundcube}
+      - ROUNDCUBEMAIL_DB_NAME=roundcube
+      - ROUNDCUBEMAIL_DEFAULT_HOST=ssl://mailserver
+      - ROUNDCUBEMAIL_SMTP_SERVER=tls://mailserver
+    networks:
+      - server_net
+
+  # DNS and configuration management API
+  config-api:
+    build:
+      context: ./config-api
+      dockerfile: Dockerfile
+    container_name: config-api
+    restart: always
+    depends_on:
+      - postgres
+    volumes:
+      - ./dns:/app/dns
+      - ./ssl:/app/ssl
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=config
+      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+      - CLOUDFLARE_EMAIL=${CLOUDFLARE_EMAIL}
+    networks:
+      - server_net
+
+  # Admin panel for server management
+  admin-panel:
+    build:
+      context: ./config-admin
+      dockerfile: Dockerfile
+    container_name: admin-panel
+    restart: always
+    depends_on:
+      - postgres
+    volumes:
+      - ./dkim:/app/dkim
+      - ./ssl:/app/ssl
+      - /var/log:/var/log:ro
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=postgres
+      - DOMAIN=${DOMAIN:-example.com}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme!}
+      - SESSION_SECRET=${SESSION_SECRET:-secure_admin_secret_key}
+    networks:
+      - server_net
+
+  # Nginx reverse proxy for all web services
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+      - ./nginx/html:/usr/share/nginx/html
+      - ./ssl:/etc/ssl/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - webmail
+      - config-api
+      - admin-panel
+    networks:
+      - server_net
+
+  # ClamAV for virus scanning
+  clamav:
+    image: clamav/clamav:latest
+    container_name: clamav
+    restart: always
+    volumes:
+      - clamav_data:/var/lib/clamav
+    networks:
+      - server_net
+
+  # Fail2ban for security
+  fail2ban:
+    build:
+      context: ./fail2ban
+      dockerfile: Dockerfile
+    container_name: fail2ban
+    restart: always
+    privileged: true
+    volumes:
+      - ./fail2ban/config:/etc/fail2ban
+      - /var/log:/var/log:ro
+    network_mode: "host"
+
+volumes:
+  postgres_data:
+  redis_data:
+  mail_data:
+  webmail_data:
+  clamav_data:
+
+networks:
+  server_net:
+    driver: bridge

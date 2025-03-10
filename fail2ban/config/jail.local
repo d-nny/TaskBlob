@@ -1,0 +1,84 @@
+[DEFAULT]
+# Ban IP/hosts for 1 hour
+bantime = 3600
+# Find attacks in the last 10 minutes
+findtime = 600
+# Ban after 5 attempts
+maxretry = 5
+# Ignore localhost
+ignoreip = 127.0.0.1/8 ::1
+
+# Action to take when banning - use iptables-multiport
+banaction = iptables-multiport
+banaction_allports = iptables-allports
+
+# Path for log files to monitor
+# These paths must match the log file paths in the Docker containers
+# and need to be mounted as volumes for fail2ban to access them
+
+# SSH protection
+[sshd]
+enabled = true
+mode = aggressive
+port = ssh,22
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 86400  # 24 hours
+
+# Postfix SMTP authentication
+[postfix-auth]
+enabled = true
+port = smtp,465,submission,25,587
+logpath = /var/log/mail.log
+maxretry = 5
+
+# SASL authentication failures
+[postfix-sasl]
+enabled = true
+port = smtp,465,submission,25,587
+logpath = /var/log/mail.log
+maxretry = 3
+
+# Dovecot authentication
+[dovecot]
+enabled = true
+port = pop3,pop3s,imap,imaps,submission,465,587
+logpath = /var/log/mail.log
+maxretry = 5
+
+# Protect webmail and API
+[nginx-http-auth]
+enabled = true
+port = http,https,80,443
+logpath = /var/log/nginx/error.log
+maxretry = 5
+
+# Protect against web exploits
+[nginx-botsearch]
+enabled = true
+port = http,https,80,443
+logpath = /var/log/nginx/access.log
+maxretry = 2
+findtime = 300
+bantime = 86400  # 24 hours
+
+# Roundcube webmail login protection
+[roundcube-auth]
+enabled = true
+port = http,https,80,443
+logpath = /var/log/roundcube/errors.log
+maxretry = 5
+
+# DBMail authentication
+[dbmail-auth]
+enabled = true
+port = pop3,pop3s,imap,imaps,submission,465,587
+logpath = /var/log/dbmail/*
+maxretry = 5
+
+# Generic bad bots
+[apache-badbots]
+enabled = true
+port = http,https,80,443
+logpath = /var/log/nginx/access.log
+maxretry = 2

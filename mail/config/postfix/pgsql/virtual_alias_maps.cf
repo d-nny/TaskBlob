@@ -1,0 +1,6 @@
+# PostgreSQL configuration for virtual aliases
+user = mail
+password = mail
+hosts = postgres
+dbname = mail
+query = SELECT destination FROM postfix_virtual_aliases WHERE source = '%s'

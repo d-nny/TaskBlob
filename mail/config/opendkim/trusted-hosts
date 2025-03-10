@@ -1,0 +1,6 @@
+127.0.0.1
+localhost
+${DOMAIN}
+mail.${DOMAIN}
+${PRIMARY_IP}
+${MAIL_IP}

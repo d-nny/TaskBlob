@@ -1,0 +1,6 @@
+# PostgreSQL configuration for virtual mailboxes
+user = mail
+password = mail
+hosts = postgres
+dbname = mail
+query = SELECT maildir FROM postfix_virtual_mailboxes WHERE username = '%s'

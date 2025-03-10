@@ -1,0 +1,30 @@
+# Dovecot SQL configuration file
+# Documentation: https://doc.dovecot.org/configuration_manual/authentication/sql/
+
+# Database driver: mysql, pgsql, sqlite
+driver = pgsql
+
+# Database connection string or filename
+connect = host=postgres dbname=mail user=mail password=mail
+
+# Default password scheme
+default_pass_scheme = SHA512-CRYPT
+
+# Password query - verify user's password
+password_query = \
+  SELECT username AS user, password, \
+  '/var/mail/vhosts/%d/%n' AS userdb_home, \
+  'maildir:/var/mail/vhosts/%d/%n' AS userdb_mail, \
+  1000 AS userdb_uid, 1000 AS userdb_gid \
+  FROM mailboxes WHERE username = '%u' AND active = true
+
+# User query - retrieve user information for mail delivery
+user_query = \
+  SELECT '/var/mail/vhosts/%d/%n' AS home, \
+  'maildir:/var/mail/vhosts/%d/%n' AS mail, \
+  1000 AS uid, 1000 AS gid, \
+  concat('*:bytes=', quota) AS quota_rule \
+  FROM mailboxes WHERE username = '%u' AND active = true
+
+# Iteration query for listing users (used by some Dovecot features)
+iterate_query = SELECT username AS user FROM mailboxes WHERE active = true

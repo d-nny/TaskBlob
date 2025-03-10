@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskBlob - Self-Hosted Mail & DNS Management Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: var(--light-color);
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 6rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .hero h1 {
+            font-weight: 800;
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            opacity: 0.9;
+        }
+        
+        .feature-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+            color: white;
+            border-radius: 0.75rem;
+            background-color: var(--primary-color);
+        }
+        
+        .feature-card {
+            height: 100%;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            background-color: white;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card h3 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card p {
+            color: #6c757d;
+        }
+        
+        .footer {
+            background-color: var(--dark-color);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 4rem 0;
+            margin-top: 4rem;
+        }
+        
+        .footer h5 {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .social-icons a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            margin-right: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        
+        .social-icons a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">TaskBlob</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://github.com/d-nny/TaskBlob" target="_blank">GitHub</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://webmail.example.com">Webmail</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://admin.example.com">Admin Panel</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero text-center">
+        <div class="container">
+            <h1>Self-Hosted Mail & DNS Management Platform</h1>
+            <p>TaskBlob provides a complete solution for hosting your own mail server with integrated DNS management, web interfaces, and comprehensive security features.</p>
+            <div>
+                <a href="https://github.com/d-nny/TaskBlob" class="btn btn-light btn-lg me-2">Get Started</a>
+                <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5" id="features">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Powerful Features</h2>
+                <p class="lead text-muted">Everything you need to run your own mail and web infrastructure</p>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Mail Server -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.708 2.825L15 11.105V5.383zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741zM1 11.105l4.708-2.897L1 5.383v5.722z"/>
+                            </svg>
+                        </div>
+                        <h3>Powerful Mail Server</h3>
+                        <p>Complete mail server solution with Postfix, Dovecot, and PostgreSQL backend. DKIM, SPF, and DMARC support for enhanced security and deliverability.</p>
+                    </div>
+                </div>
+                
+                <!-- DNS Management -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5H3.82zm6.853 3.472A7.024 7.024 0 0 0 13.745 12H11.91a9.27 9.27 0 0 1-.64 1.539 6.688 6.688 0 0 1-.597.933zM8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855.173-.324.33-.682.468-1.068H8.5zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.65 13.65 0 0 1-.312 2.5zm2.802-3.5a6.959 6.959 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5h2.49zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7.024 7.024 0 0 0-3.072-2.472c.218.284.418.598.597.933zM10.855 4a7.966 7.966 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4h2.355z"/>
+                            </svg>
+                        </div>
+                        <h3>Cloud DNS Management</h3>
+                        <p>Automated DNS configuration via Cloudflare API. Easily add domains, configure MX, DKIM, SPF, and other records. Automatic SSL certificate generation.</p>
+                    </div>
+                </div>
+                
+                <!-- Admin Panel -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M6 1H1v14h5V1zm9 0h-5v5h5V1zm0 9v5h-5v-5h5zM0 1a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm9 0a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V1zm1 8a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1h-5z"/>
+                            </svg>
+                        </div>
+                        <h3>Web Admin Panel</h3>
+                        <p>Intuitive web interface for managing domains, email accounts, and server settings. Real-time monitoring, log viewing, and SSL certificate management.</p>
+                    </div>
+                </div>
+                
+                <!-- Security -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                            </svg>
+                        </div>
+                        <h3>Enhanced Security</h3>
+                        <p>Built-in security features including Fail2ban, automated SSL renewal, firewall configuration, and environment variable-based credential management.</p>
+                    </div>
+                </div>
+                
+                <!-- Docker Integration -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12.151 4.576c0 .08-.065.171-.151.171h-1.953c-.086 0-.151-.09-.151-.171v-1.71c0-.08.065-.17.151-.17h1.953c.086 0 .151.09.151.17v1.71Zm-7.3 3.425c0 .08-.066.171-.151.171H2.747c-.086 0-.152-.09-.152-.171v-1.71c0-.08.066-.17.152-.17h1.953c.086 0 .152.09.152.17v1.71Zm7.45 0c0 .08-.066.171-.151.171h-1.953c-.086 0-.152-.09-.152-.171v-1.71c0-.08.066-.17.152-.17h1.953c.086 0 .151.09.151.17v1.71Zm-5.678-.171h-1.952c-.086 0-.152-.09-.152-.17v-1.71c0-.08.066-.17.152-.17H6.62c.086 0 .152.09.152.17v1.71c0 .08-.066.17-.152.17Zm3.306 0h-1.952c-.086 0-.152-.09-.152-.17v-1.71c0-.08.066-.17.152-.17h1.952c.086 0 .152.09.152.17v1.71c0 .08-.066.17-.152.17ZM3.63 4.576c0 .08-.065.171-.151.171H1.526c-.086 0-.152-.09-.152-.171v-1.71c0-.08.066-.17.152-.17h1.953c.086 0 .151.09.151.17v1.71Zm3.46 0c0 .08-.066.171-.152.171H4.986c-.086 0-.152-.09-.152-.171v-1.71c0-.08.066-.17.152-.17h1.953c.086 0 .152.09.152.17v1.71Zm3.461 0c0 .08-.066.171-.152.171H8.447c-.086 0-.152-.09-.152-.171v-1.71c0-.08.066-.17.152-.17H10.4c.086 0 .152.09.152.17v1.71ZM13.577.161C13.363.054 13.18 0 12.896 0H.68c-.283 0-.466.054-.68.161-.214.108-.32.271-.32.489v4.88c0 .218.106.381.32.489.214.107.397.161.68.161h.238v2.257c0 .162.034.305.102.427a.845.845 0 0 0 .306.297c.137.073.27.109.4.109h.339c.13 0 .263-.036.4-.109a.845.845 0 0 0 .306-.297.705.705 0 0 0 .102-.427V6.19h7.375v.508c0 .297.008.516.024.656a.64.64 0 0 0 .176.365c.089.09.232.155.43.193s.495.057.87.057h.102c.375 0 .672-.019.87-.057s.341-.103.43-.193a.64.64 0 0 0 .176-.365c.016-.14.024-.359.024-.656V6.19h.238c.283 0 .466-.054.68-.161.214-.108.32-.271.32-.489v-4.88c0-.218-.106-.381-.32-.489Z"/>
+                            </svg>
+                        </div>
+                        <h3>Docker Containerization</h3>
+                        <p>Fully containerized setup with Docker and Docker Compose. Easily deploy, update, and scale your infrastructure. Isolated services for improved security.</p>
+                    </div>
+                </div>
+                
+                <!-- Email Services -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM5 4h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1z"/>
+                            </svg>
+                        </div>
+                        <h3>Complete Email Solution</h3>
+                        <p>Full-featured email system with webmail interface, anti-spam protection, virus scanning, and mail forwarding. Support for multiple domains and users.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">How It Works</h2>
+                <p class="lead text-muted">Setting up your own mail server has never been easier</p>
+            </div>
+            
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <img src="https://via.placeholder.com/600x400?text=TaskBlob+Diagram" alt="How TaskBlob Works" class="img-fluid rounded shadow">
+                </div>
+                <div class="col-lg-6">
+                    <div class="accordion" id="howItWorksAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                    1. Clone & Configure
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#howItWorksAccordion">
+                                <div class="accordion-body">
+                                    Clone the repository from GitHub and create your .env file from the template. Configure your domain, IP addresses, and API credentials.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                    2. Run Setup Script
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#howItWorksAccordion">
+                                <div class="accordion-body">
+                                    Run the master setup script, which will guide you through setting up the various components. The script handles DNS configuration, SSL certificates, and mail server setup.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                    3. Access Admin Panel
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#howItWorksAccordion">
+                                <div class="accordion-body">
+                                    Access the admin panel at admin.yourdomain.com to manage your server. Add domains, create email accounts, monitor server status, and view logs.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">
+                                    4. Enjoy Your Mail Server
+                                </button>
+                            </h2>
+                            <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#howItWorksAccordion">
+                                <div class="accordion-body">
+                                    Your mail server is now fully functional! Users can access their email via webmail.yourdomain.com or use standard email clients like Outlook, Thunderbird, or Gmail app.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="py-5 text-center" style="background-color: var(--primary-color); color: white;">
+        <div class="container">
+            <h2 class="fw-bold mb-3">Ready to take control of your email?</h2>
+            <p class="lead mb-4">Start building your own self-hosted mail server today</p>
+            <a href="https://github.com/d-nny/TaskBlob" class="btn btn-light btn-lg px-4 me-2">Get Started on GitHub</a>
+            <a href="https://admin.example.com" class="btn btn-outline-light btn-lg px-4">Admin Login</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5>TaskBlob</h5>
+                    <p>A self-hosted mail and DNS management platform that gives you full control over your email infrastructure.</p>
+                    <div class="social-icons mt-3">
+                        <a href="https://github.com/d-nny/TaskBlob" target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 col-lg-2 mb-4 mb-md-0">
+                    <h5>Quick Links</h5>
+                    <ul class="footer-links">
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="https://webmail.example.com">Webmail</a></li>
+                        <li><a href="https://admin.example.com">Admin Panel</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-4 col-lg-2 mb-4 mb-md-0">
+                    <h5>Resources</h5>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/d-nny/TaskBlob">GitHub</a></li>
+                        <li><a href="https://github.com/d-nny/TaskBlob/issues">Issues</a></li>
+                        <li><a href="https://github.com/d-nny/TaskBlob/blob/main/README.md">Documentation</a></li>
+                        <li><a href="https://github.com/d-nny/TaskBlob/blob/main/SECURITY.md">Security</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-4 col-lg-4">
+                    <h5>About</h5>
+                    <p>TaskBlob is an open-source project designed to make self-hosting email services accessible to everyone. We believe in privacy, security, and giving users control over their data.</p>
+                </div>
+            </div>
+            
+            <hr class="my-4 bg-secondary">
+            
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-0">© 2025 TaskBlob. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="mb-0">
+                        <a href="#"

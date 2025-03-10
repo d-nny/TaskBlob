@@ -1,0 +1,74 @@
+{
+  "domain": "DOMAIN_PLACEHOLDER",
+  "records": {
+    "a": [
+      {
+        "name": "@",
+        "content": "PRIMARY_IP_PLACEHOLDER",
+        "proxied": true
+      },
+      {
+        "name": "webmail",
+        "content": "PRIMARY_IP_PLACEHOLDER",
+        "proxied": true
+      },
+      {
+        "name": "mail",
+        "content": "MAIL_IP_PLACEHOLDER",
+        "proxied": false
+      }
+    ],
+    "aaaa": [
+      {
+        "name": "@",
+        "content": "IPV6_PREFIX_PLACEHOLDER::1",
+        "proxied": true
+      },
+      {
+        "name": "webmail",
+        "content": "IPV6_PREFIX_PLACEHOLDER::1",
+        "proxied": true
+      },
+      {
+        "name": "mail",
+        "content": "IPV6_PREFIX_PLACEHOLDER::2",
+        "proxied": false
+      }
+    ],
+    "mx": [
+      {
+        "name": "@",
+        "content": "mail.DOMAIN_PLACEHOLDER",
+        "priority": 10,
+        "proxied": false
+      }
+    ],
+    "txt": [
+      {
+        "name": "@",
+        "content": "v=spf1 mx a ip4:PRIMARY_IP_PLACEHOLDER ip4:MAIL_IP_PLACEHOLDER ip6:IPV6_PREFIX_PLACEHOLDER::/64 ~all",
+        "proxied": false
+      },
+      {
+        "name": "mail._domainkey",
+        "content": "Generated dynamically by opendkim-genkey",
+        "proxied": false
+      },
+      {
+        "name": "_dmarc",
+        "content": "v=DMARC1; p=none; rua=mailto:postmaster@DOMAIN_PLACEHOLDER",
+        "proxied": false
+      }
+    ]
+  },
+  "ssl": {
+    "domains": [
+      "DOMAIN_PLACEHOLDER",
+      "www.DOMAIN_PLACEHOLDER",
+      "webmail.DOMAIN_PLACEHOLDER",
+      "mail.DOMAIN_PLACEHOLDER"
+    ],
+    "webroot": "/var/www/html",
+    "output_dir": "/var/server/SSL/DOMAIN_PLACEHOLDER"
+  }
+}

@@ -72,6 +72,9 @@ const DNSConfig = sequelize.define('DNSConfig', {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   }
+}, {
+  tableName: 'DNSConfigs', // Explicitly set table name for consistency
+  logging: (msg) => logger.debug(msg)
 });
 
 // Define DomainSettings model

@@ -172,27 +172,69 @@ const MailDomain = sequelize.define('MailDomain', {
   }
 });
 
-// Initialize database
+// Initialize database with retry logic
 async function initDatabase() {
-  try {
-    await sequelize.authenticate();
-    logger.info('Database connection established');
-    
-    await sequelize.sync({ alter: true });
-    logger.info('Database models synchronized');
-    
-    // Check if Cloudflare API credentials are stored
-    const apiCredentials = await CloudflareAPI.findOne({ where: { active: true } });
-    if (!apiCredentials && process.env.CLOUDFLARE_EMAIL && process.env.CLOUDFLARE_API_KEY) {
-      await CloudflareAPI.create({
-        email: process.env.CLOUDFLARE_EMAIL,
-        apiKey: process.env.CLOUDFLARE_API_KEY,
-        active: true
-      });
-      logger.info('Cloudflare API credentials stored');
+  const MAX_RETRIES = 10;
+  const RETRY_DELAY = 5000; // 5 seconds
+  let retries = 0;
+  
+  while (retries < MAX_RETRIES) {
+    try {
+      logger.info(`Attempting database connection (attempt ${retries + 1}/${MAX_RETRIES})...`);
+      await sequelize.authenticate();
+      logger.info('Database connection established');
+      
+      // Force table creation with correct names
+      await sequelize.sync({ force: false, alter: true });
+      logger.info('Database models synchronized');
+      
+      // Create DNS configs table explicitly if needed
+      try {
+        await sequelize.query(`
+          CREATE TABLE IF NOT EXISTS "DNSConfigs" (
+            "domain" VARCHAR(255) PRIMARY KEY,
+            "config" JSONB NOT NULL,
+            "lastUpdated" TIMESTAMP WITH TIME ZONE,
+            "active" BOOLEAN DEFAULT true,
+            "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+            "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL
+          )
+        `);
+        logger.info('DNSConfigs table created/verified');
+      } catch (tableError) {
+        logger.warn('Error creating DNSConfigs table:', tableError.message);
+      }
+      
+      // Check if Cloudflare API credentials are stored
+      try {
+        const apiCredentials = await CloudflareAPI.findOne({ where: { active: true } });
+        if (!apiCredentials && process.env.CLOUDFLARE_EMAIL && process.env.CLOUDFLARE_API_KEY) {
+          await CloudflareAPI.create({
+            email: process.env.CLOUDFLARE_EMAIL,
+            apiKey: process.env.CLOUDFLARE_API_KEY,
+            active: true
+          });
+          logger.info('Cloudflare API credentials stored');
+        }
+      } catch (credError) {
+        logger.warn('Error storing Cloudflare credentials:', credError.message);
+      }
+      
+      // Success - exit the retry loop
+      return true;
+    } catch (error) {
+      retries++;
+      logger.error(`Database connection attempt ${retries}/${MAX_RETRIES} failed:`, error.message);
+      
+      if (retries >= MAX_RETRIES) {
+        logger.error('Max database connection retries reached. Starting in limited mode.');
+        return false;
+      }
+      
+      // Wait before trying again
+      logger.info(`Waiting ${RETRY_DELAY/1000} seconds before next retry...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
     }
-  } catch (error) {
-    logger.error('Database initialization error:', error);
   }
 }
 

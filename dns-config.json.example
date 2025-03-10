@@ -1,0 +1,91 @@
+{
+  "domain": "example.com",
+  "primary_ip": "123.45.67.89",
+  "mail_ip": "123.45.67.90",
+  "api_settings": {
+    "url": "http://localhost:3000",
+    "use_direct_api": false
+  },
+  "directories": {
+    "dkim": "./dkim"
+  },
+  "dns_records": {
+    "a_records": [
+      {
+        "name": "@",
+        "content": "#PRIMARY_IP#",
+        "proxied": false
+      },
+      {
+        "name": "www",
+        "content": "#PRIMARY_IP#",
+        "proxied": false
+      },
+      {
+        "name": "mail",
+        "content": "#MAIL_IP#",
+        "proxied": false
+      },
+      {
+        "name": "webmail",
+        "content": "#PRIMARY_IP#",
+        "proxied": false
+      },
+      {
+        "name": "admin",
+        "content": "#PRIMARY_IP#",
+        "proxied": false
+      }
+    ],
+    "mx_records": [
+      {
+        "name": "@",
+        "content": "mail.#DOMAIN#",
+        "priority": 10
+      }
+    ],
+    "txt_records": [
+      {
+        "name": "@",
+        "content": "v=spf1 mx ~all"
+      },
+      {
+        "name": "_dmarc",
+        "content": "v=DMARC1; p=none; rua=mailto:admin@#DOMAIN#"
+      },
+      {
+        "name": "mail._domainkey",
+        "content": "#DKIM_RECORD#"
+      }
+    ],
+    "srv_records": [
+      {
+        "name": "_imaps._tcp",
+        "service": "_imaps",
+        "proto": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 993,
+        "target": "mail.#DOMAIN#"
+      },
+      {
+        "name": "_submission._tcp",
+        "service": "_submission",
+        "proto": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 587,
+        "target": "mail.#DOMAIN#"
+      },
+      {
+        "name": "_pop3s._tcp",
+        "service": "_pop3s",
+        "proto": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 995,
+        "target": "mail.#DOMAIN#"
+      }
+    ]
+  }
+}

@@ -73,3 +73,8 @@ Thumbs.db
 *.bak
 *.backup
 *.old
+
+# Local settings and customizations
+settings.local.sh
+setup-dns.sh.backup.*
+dns-config.json

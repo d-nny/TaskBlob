@@ -1,0 +1,20 @@
+#!/bin/bash
+# Local settings override for setup-dns.sh
+# Copy this file to settings.local.sh and customize it with your specific settings
+# This file is not tracked by Git, allowing you to pull updates without conflicts
+
+# Domain overrides
+DOMAIN_OVERRIDE="example.com"  # Override domain from .env or command line
+
+# IP address overrides  
+PRIMARY_IP_OVERRIDE="123.45.67.89"  # Override PRIMARY_IP from .env
+MAIL_IP_OVERRIDE="123.45.67.90"     # Override MAIL_IP from .env
+
+# API configuration
+API_URL_OVERRIDE="http://localhost:3000"  # Override default API URL
+USE_DIRECT_API_OVERRIDE=false              # Set to true to always use direct Cloudflare API
+
+# Directory configuration
+DKIM_DIR_OVERRIDE="./dkim"                # Override DKIM keys directory
+
+# Uncomment and set values as needed

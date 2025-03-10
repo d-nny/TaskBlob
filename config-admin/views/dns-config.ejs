@@ -1,0 +1,151 @@
+<%- include('partials/header') %>
+
+<div class="container mt-4">
+  <h1>DNS Configuration</h1>
+  
+  <% if (errors) { %>
+    <div class="alert alert-danger">
+      <%= errors %>
+    </div>
+  <% } %>
+  
+  <% if (success) { %>
+    <div class="alert alert-success">
+      <%= success %>
+    </div>
+  <% } %>
+  
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5>Select Domain</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" action="/dns">
+        <div class="form-group">
+          <label for="domain">Domain:</label>
+          <select name="domain" id="domain" class="form-control" onchange="this.form.submit()">
+            <option value="">-- Select Domain --</option>
+            <% domains.forEach(function(domain) { %>
+              <option value="<%= domain.domain %>" <%= (selectedDomain === domain.domain) ? 'selected' : '' %>>
+                <%= domain.domain %>
+              </option>
+            <% }); %>
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <% if (selectedDomain) { %>
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>DNS Records for <%= selectedDomain %></h5>
+        <div>
+          <a href="/dns/<%= selectedDomain %>/update" class="btn btn-primary btn-sm">
+            Update DNS Records
+          </a>
+          <a href="/dns/<%= selectedDomain %>/setup" class="btn btn-success btn-sm">
+            Run DNS Setup
+          </a>
+          <a href="/dns/<%= selectedDomain %>/setup?direct=true" class="btn btn-warning btn-sm">
+            Run Direct DNS Setup
+          </a>
+          <a href="/dns/<%= selectedDomain %>/dkim" class="btn btn-info btn-sm">
+            Generate DKIM Keys
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if (dnsRecords && dnsRecords.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Name</th>
+                  <th>Content</th>
+                  <th>Additional Info</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% dnsRecords.forEach(function(record) { %>
+                  <tr>
+                    <td><span class="badge badge-primary"><%= record.type %></span></td>
+                    <td><%= record.name %></td>
+                    <td><code><%= record.content %></code></td>
+                    <td>
+                      <% if (record.type === 'MX') { %>
+                        Priority: <%= record.priority %>
+                      <% } else if (record.type === 'A') { %>
+                        Proxied: <%= record.proxied %>
+                      <% } else if (record.type === 'SRV') { %>
+                        Service: <%= record.service %>, 
+                        Proto: <%= record.proto %>, 
+                        Priority: <%= record.priority %>, 
+                        Weight: <%= record.weight %>, 
+                        Port: <%= record.port %>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="alert alert-info">
+            No DNS records found for this domain. Run DNS Setup to create the records.
+          </div>
+        <% } %>
+      </div>
+    </div>
+    
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5>DKIM Status</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <% if (dnsRecords.some(r => r.type === 'TXT' && r.name === 'mail._domainkey')) { %>
+              <div class="alert alert-success">
+                DKIM keys are configured for this domain
+              </div>
+            <% } else { %>
+              <div class="alert alert-warning">
+                DKIM keys are not configured for this domain
+              </div>
+            <% } %>
+          </div>
+          <a href="/dns/<%= selectedDomain %>/dkim" class="btn btn-primary">
+            Generate/Regenerate DKIM Keys
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>DNS Configuration JSON</h5>
+        <button class="btn btn-sm btn-secondary" onclick="toggleJsonView()">
+          Show/Hide JSON
+        </button>
+      </div>
+      <div class="card-body" id="jsonConfig" style="display: none;">
+        <pre class="bg-light p-3 rounded"><code><%= JSON.stringify(dnsConfig, null, 2) %></code></pre>
+      </div>
+    </div>
+    
+    <script>
+      function toggleJsonView() {
+        const jsonConfig = document.getElementById('jsonConfig');
+        jsonConfig.style.display = jsonConfig.style.display === 'none' ? 'block' : 'none';
+      }
+    </script>
+  <% } else { %>
+    <div class="alert alert-info">
+      Please select a domain to view or configure DNS records
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

@@ -249,6 +249,21 @@ app.get('/logs', isAuthenticated, (req, res) => {
   });
 });
 
+// Import DNS Controller
+const dnsController = require('./controllers/dnsController');
+
+// DNS Management Routes
+app.get('/dns', isAuthenticated, dnsController.showDnsConfig);
+app.get('/dns/:domain/update', isAuthenticated, dnsController.updateDnsConfig);
+app.get('/dns/:domain/setup', isAuthenticated, dnsController.setupDns);
+app.get('/dns/:domain/dkim', isAuthenticated, dnsController.generateDkim);
+
+// Add link to DNS management in the navigation menu
+// This would be in your header.ejs file - you'd need to update it to include:
+// <li class="nav-item">
+//   <a class="nav-link" href="/dns">DNS Management</a>
+// </li>
+
 // Logout
 app.get('/logout', (req, res) => {
   req.session.destroy();

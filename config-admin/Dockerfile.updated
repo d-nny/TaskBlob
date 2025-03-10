@@ -1,0 +1,45 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install required packages
+COPY package*.json ./
+RUN npm install
+
+# Copy application files
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p public views
+
+# Create fallback index.html for root redirection
+RUN echo '<!DOCTYPE html>\n\
+<html>\n\
+<head>\n\
+  <meta charset="utf-8">\n\
+  <meta http-equiv="refresh" content="0;url=/login">\n\
+  <title>Redirecting to Login</title>\n\
+</head>\n\
+<body>\n\
+  <h1>Redirecting to Login Page...</h1>\n\
+  <p>If you are not redirected automatically, please <a href="/login">click here</a>.</p>\n\
+  <script>window.location.href = "/login";</script>\n\
+</body>\n\
+</html>' > public/index.html
+
+# Create a startup script that initializes the database and starts the server
+RUN echo '#!/bin/sh\n\
+\n\
+# Wait for Postgres to be ready\n\
+echo "Waiting for PostgreSQL to be ready..."\n\
+sleep 5\n\
+\n\
+# Start the application\n\
+echo "Starting admin panel..."\n\
+exec node server.js\n\
+' > /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
+
+EXPOSE 3001
+
+# Use the new entrypoint script
+CMD ["/app/docker-entrypoint.sh"]

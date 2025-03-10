@@ -219,12 +219,25 @@ EOF
 echo -e "${GREEN}Saving DNS configuration to dns/${DOMAIN}_config.json...${NC}"
 echo "$DNS_CONFIG" > "../${DOMAIN}_config.json"
 
-# 3. Push DNS configuration to API for Cloudflare integration
+# 3. First, store Cloudflare credentials in the database
+echo -e "${GREEN}Storing Cloudflare credentials in the API database...${NC}"
+STORE_CREDS_DATA="{\"email\":\"${CLOUDFLARE_EMAIL}\",\"apiKey\":\"${CLOUDFLARE_API_KEY}\",\"active\":true}"
+CREDS_RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -d "$STORE_CREDS_DATA" ${API_URL}/api/cloudflare/credentials 2>&1)
+
+# Check if credentials endpoint doesn't exist (we'll use the original approach)
+if [[ "$CREDS_RESPONSE" == *"Cannot POST"* ]]; then
+    echo -e "${YELLOW}Credentials API endpoint not available. Using headers method instead.${NC}"
+    # Continue with existing approach
+else
+    echo -e "${GREEN}Credentials stored in database.${NC}"
+fi
+
+# 4. Push DNS configuration to API for Cloudflare integration
 echo -e "${GREEN}Pushing DNS configuration to Cloudflare via API...${NC}"
 echo -e "API URL: ${API_URL}/api/dns"
-echo -e "Making API request with Cloudflare credentials..."
+echo -e "Making API request..."
 
-# Pass Cloudflare credentials explicitly in the curl request
+# Try both approaches: headers and database stored credentials
 DNS_RESPONSE=$(curl -s -v -X POST \
   -H "Content-Type: application/json" \
   -H "X-Cloudflare-Email: ${CLOUDFLARE_EMAIL}" \
@@ -255,7 +268,7 @@ if [[ "$DNS_RESPONSE" == *"error"* ]]; then
     exit 1
 fi
 
-# 4. Update DNS records in Cloudflare
+# 5. Update DNS records in Cloudflare
 echo -e "${GREEN}Updating DNS records in Cloudflare...${NC}"
 UPDATE_RESPONSE=$(curl -s -X POST \
   -H "X-Cloudflare-Email: ${CLOUDFLARE_EMAIL}" \

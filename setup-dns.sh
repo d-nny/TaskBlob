@@ -53,6 +53,40 @@ if ! command -v curl &> /dev/null; then
     apt-get update && apt-get install -y curl
 fi
 
+# Function to check API status
+check_api_status() {
+    local status_code=$(curl -s -o /dev/null -w "%{http_code}" ${API_URL}/api/status)
+    if [ "$status_code" = "200" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Verify API is accessible
+echo -e "${GREEN}Verifying API connectivity...${NC}"
+MAX_RETRIES=5
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if check_api_status; then
+        echo -e "${GREEN}API is accessible!${NC}"
+        break
+    else
+        echo -e "${YELLOW}API not available yet. Retrying in 10 seconds... (attempt $((RETRY_COUNT+1))/$MAX_RETRIES)${NC}"
+        sleep 10
+        RETRY_COUNT=$((RETRY_COUNT+1))
+    fi
+done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo -e "${RED}ERROR: API is not accessible after $MAX_RETRIES attempts.${NC}"
+    echo -e "${YELLOW}Possible issues:${NC}"
+    echo -e "1. The config-api service is not running (check with 'docker ps')"
+    echo -e "2. The API is running but not responding (check with 'docker logs config-api')"
+    echo -e "3. The PostgreSQL database might not be properly initialized"
+    exit 1
+fi
+
 # Create directory structure
 mkdir -p ${DKIM_DIR}/${DOMAIN}
 
@@ -65,7 +99,7 @@ if [ -f "./dns/template.json" ]; then
     sed -i "s/DOMAIN_PLACEHOLDER/${DOMAIN}/g" "./dns/${DOMAIN}.json.new"
     sed -i "s/PRIMARY_IP_PLACEHOLDER/${PRIMARY_IP}/g" "./dns/${DOMAIN}.json.new"
     sed -i "s/MAIL_IP_PLACEHOLDER/${MAIL_IP}/g" "./dns/${DOMAIN}.json.new"
-    sed -i "s/IPV6_PREFIX_PLACEHOLDER/${IPV6_PREFIX}/g" "./dns/${DOMAIN}.json.new"
+    sed -i "s/IPV6_PREFIX_PLACEHOLDER/${IPV6_PREFIX:-2a01:4f8}/g" "./dns/${DOMAIN}.json.new"
     
     # Move the new file to replace any existing one
     mv "./dns/${DOMAIN}.json.new" "./dns/${DOMAIN}.json"
@@ -172,11 +206,31 @@ DNS_CONFIG=$(cat <<EOF
 EOF
 )
 
+# Save DNS config to file for debugging purposes
+echo -e "${GREEN}Saving DNS configuration to dns/${DOMAIN}_config.json...${NC}"
+echo "$DNS_CONFIG" > "../${DOMAIN}_config.json"
+
 # 3. Push DNS configuration to API for Cloudflare integration
 echo -e "${GREEN}Pushing DNS configuration to Cloudflare via API...${NC}"
-DNS_RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -d "$DNS_CONFIG" ${API_URL}/api/dns)
+DNS_RESPONSE=$(curl -s -v -X POST -H "Content-Type: application/json" -d "$DNS_CONFIG" ${API_URL}/api/dns 2>&1)
+CURL_EXIT_CODE=$?
+
+if [ $CURL_EXIT_CODE -ne 0 ]; then
+    echo -e "${RED}Error: curl command failed with exit code $CURL_EXIT_CODE${NC}"
+    echo -e "${RED}Response: $DNS_RESPONSE${NC}"
+    echo -e "${YELLOW}Possible issues:${NC}"
+    echo -e "1. The API service might be unreachable"
+    echo -e "2. Connection might be blocked by firewall"
+    exit 1
+fi
+
 if [[ "$DNS_RESPONSE" == *"error"* ]]; then
     echo -e "${RED}Error creating DNS configuration: $DNS_RESPONSE${NC}"
+    echo -e "${YELLOW}Possible issues:${NC}"
+    echo -e "1. Domain configuration format might be invalid"
+    echo -e "2. API might not have access to PostgreSQL database"
+    echo -e "3. Cloudflare credentials might be invalid"
+    echo -e "\nCheck logs with: docker logs config-api"
     exit 1
 fi
 
@@ -185,6 +239,11 @@ echo -e "${GREEN}Updating DNS records in Cloudflare...${NC}"
 UPDATE_RESPONSE=$(curl -s -X POST ${API_URL}/api/dns/${DOMAIN}/update)
 if [[ "$UPDATE_RESPONSE" == *"error"* ]]; then
     echo -e "${RED}Error updating DNS records: $UPDATE_RESPONSE${NC}"
+    echo -e "${YELLOW}Possible issues:${NC}"
+    echo -e "1. Cloudflare API credentials might be invalid"
+    echo -e "2. The domain zone might not exist in Cloudflare"
+    echo -e "3. The API might not have permissions to update DNS records"
+    echo -e "\nCheck logs with: docker logs config-api"
     exit 1
 fi
 
@@ -199,6 +258,7 @@ MAIL_DOMAIN_RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" \
     ${API_URL}/api/mail/domains)
 if [[ "$MAIL_DOMAIN_RESPONSE" == *"error"* ]]; then
     echo -e "${RED}Error registering mail domain: $MAIL_DOMAIN_RESPONSE${NC}"
+    echo -e "${YELLOW}This is non-critical, continuing with the setup...${NC}"
 fi
 
 # 7. Create admin user
@@ -217,6 +277,7 @@ if [ -z "${ADMIN_PASSWORD}" ]; then
 fi
 if [[ "$ADMIN_USER_RESPONSE" == *"error"* ]]; then
     echo -e "${RED}Error creating admin user: $ADMIN_USER_RESPONSE${NC}"
+    echo -e "${YELLOW}This is non-critical, continuing with the setup...${NC}"
 fi
 
 # 8. Generate SSL certificate using DNS validation
@@ -226,23 +287,26 @@ SSL_RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" \
     ${API_URL}/api/ssl/${DOMAIN}/generate)
 if [[ "$SSL_RESPONSE" == *"error"* ]]; then
     echo -e "${RED}Error generating SSL certificate: $SSL_RESPONSE${NC}"
-fi
-
-# Extract script path from response
-SCRIPT_PATH=$(echo $SSL_RESPONSE | grep -o '"/tmp/generate-ssl.sh"' | tr -d '"')
-if [ -n "$SCRIPT_PATH" ]; then
-    echo -e "${GREEN}Running SSL certificate script...${NC}"
-    chmod +x $SCRIPT_PATH
-    sudo $SCRIPT_PATH
-
-    # Verify certificate was created
-    if [ -d "/app/ssl/${DOMAIN}" ]; then
-        echo -e "${GREEN}SSL certificate generated successfully!${NC}"
-    else
-        echo -e "${RED}SSL certificate generation failed!${NC}"
-    fi
+    echo -e "${YELLOW}SSL certificate generation failed, you may need to run this manually later.${NC}"
 else
-    echo -e "${RED}SSL script path not found in response!${NC}"
+    # Extract script path from response
+    SCRIPT_PATH=$(echo $SSL_RESPONSE | grep -o '"/tmp/generate-ssl.sh"' | tr -d '"')
+    if [ -n "$SCRIPT_PATH" ]; then
+        echo -e "${GREEN}Running SSL certificate script...${NC}"
+        chmod +x $SCRIPT_PATH
+        sudo $SCRIPT_PATH
+
+        # Verify certificate was created
+        if [ -d "/app/ssl/${DOMAIN}" ]; then
+            echo -e "${GREEN}SSL certificate generated successfully!${NC}"
+        else
+            echo -e "${RED}SSL certificate generation failed!${NC}"
+            echo -e "${YELLOW}You may need to generate SSL certificates manually later.${NC}"
+        fi
+    else
+        echo -e "${RED}SSL script path not found in response!${NC}"
+        echo -e "${YELLOW}SSL certificate generation failed, you may need to run this manually later.${NC}"
+    fi
 fi
 
 # 9. Copy DKIM keys to the mail container's expected location
@@ -279,3 +343,8 @@ echo -e "1. Check DNS records: dig +short MX ${DOMAIN}"
 echo -e "2. Test SMTP connection: telnet mail.${DOMAIN} 25"
 echo -e "3. Test IMAP connection: openssl s_client -connect mail.${DOMAIN}:993"
 echo -e "4. Access webmail at: https://webmail.${DOMAIN}\n"
+echo -e "\n${YELLOW}If you encountered any errors during this process, check:${NC}"
+echo -e "1. Docker logs: docker logs config-api"
+echo -e "2. Your .env file to ensure all required variables are set correctly"
+echo -e "3. Cloudflare dashboard to confirm DNS records were created"
+echo -e "4. Run individual failed steps manually if needed\n"

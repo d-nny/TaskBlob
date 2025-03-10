@@ -105,13 +105,53 @@ section "Waiting for PostgreSQL initialization"
 echo -e "Waiting 30 seconds for PostgreSQL to initialize..."
 sleep 30
 
+# Wait for config-api to be ready
+section "Checking if config-api service is ready"
+echo -e "Waiting for config-api service to be available..."
+RETRY_COUNT=0
+MAX_RETRIES=10
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+  if curl -s http://localhost:3000/api/status | grep -q "running"; then
+    echo -e "${GREEN}Config API service is ready!${NC}"
+    break
+  else
+    echo -e "Config API not ready yet, waiting (attempt $((RETRY_COUNT+1))/$MAX_RETRIES)..."
+    sleep 15
+    RETRY_COUNT=$((RETRY_COUNT+1))
+  fi
+done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+  echo -e "${YELLOW}Warning: Could not verify config-api service is ready. DNS setup may fail.${NC}"
+fi
+
 # Run DNS setup if requested
 section "DNS Configuration"
 echo -e "Do you want to run DNS setup now?"
 read -p "Setup DNS? (y/N): " setup_dns
 
 if [[ "$setup_dns" == "y" || "$setup_dns" == "Y" ]]; then
-  node bootstrap.js ./setup-dns.sh
+  # Verify environment variables before running DNS setup
+  if [ -z "$CLOUDFLARE_API_KEY" ] || [ -z "$CLOUDFLARE_EMAIL" ]; then
+    echo -e "${YELLOW}Warning: CLOUDFLARE_API_KEY or CLOUDFLARE_EMAIL environment variables not set.${NC}"
+    echo -e "These are required for DNS setup. Please check your .env file."
+    read -p "Continue anyway? (y/N): " continue_dns
+    if [[ "$continue_dns" != "y" && "$continue_dns" != "Y" ]]; then
+      echo -e "DNS setup skipped. You can run it later with: node bootstrap.js ./setup-dns.sh"
+      continue_dns="n"
+    fi
+  fi
+  
+  if [[ "$continue_dns" != "n" ]]; then
+    echo -e "${GREEN}Running DNS setup...${NC}"
+    node bootstrap.js ./setup-dns.sh
+    
+    # Check if DNS setup succeeded
+    if [ $? -ne 0 ]; then
+      echo -e "${YELLOW}DNS setup may not have completed successfully.${NC}"
+      echo -e "You can run it again later with: node bootstrap.js ./setup-dns.sh"
+    fi
+  fi
 else
   echo -e "Skipping DNS setup."
   echo -e "You can run it later with: node bootstrap.js ./setup-dns.sh"

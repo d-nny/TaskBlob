@@ -1,110 +1,121 @@
-# Linux Server Build System
+# TaskBlob: Unified Server Deployment System
 
-This repository contains scripts and configuration files for setting up a complete Linux server with mail, DNS management, and web services. All configuration is done through environment variables to avoid hardcoding sensitive information.
+TaskBlob is a comprehensive mail and DNS server management system with an automated deployment process. This repository contains all necessary components for setting up a complete server environment with mail, DNS management, and administrative capabilities.
 
-## Features
+## Simplified Deployment Process
 
-- Mail server setup with Postfix and Dovecot
-- DNS management via Cloudflare API
-- PostgreSQL database for mail accounts and web applications
-- Web-based admin panel
-- Centralized configuration management
-- SSL certificate automation
-- Firewall configuration
+The deployment process has been completely redesigned to be more streamlined and user-friendly:
 
-## Prerequisites
+1. **Single Command Deployment**: Deploy the entire system with a single script
+2. **First-Time Setup Wizard**: Configure admin password, DNS, and database through a web interface
+3. **Consolidated Configuration**: All components work seamlessly together without manual intervention
+
+## Getting Started
+
+### Prerequisites
 
 - A Linux server (Debian/Ubuntu recommended)
-- Domain name with DNS managed by Cloudflare
 - Docker and Docker Compose installed
+- Domain name with DNS managed by Cloudflare
+- Server with port 25, 80, 443, and mail ports accessible
 
-## Installation
+### Deployment
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/d-nny/TaskBlob.git
+   git clone https://github.com/your-username/TaskBlob.git
    cd TaskBlob
    ```
 
-2. Create a `.env` file from the template:
+2. Run the unified deployment script:
    ```bash
-   cp .env.template .env
+   ./deploy.sh
    ```
 
-3. Initialize your credentials with a single master password:
-   ```bash
-   # Linux/Mac
-   chmod +x init-credentials.js
-   ./init-credentials.js
-   
-   # Windows
-   node init-credentials.js
-   ```
+3. Access the admin panel at:
+   - http://your-server-ip:3001
+   - http://admin.yourdomain.com (once DNS is configured)
 
-4. Run the master setup script:
-   ```bash
-   sudo ./master-setup.sh yourdomain.com
-   ```
+4. Complete the first-time setup wizard:
+   - Set your admin password
+   - Configure DNS settings
+   - Initialize the database schema
+
+## System Components
+
+TaskBlob consists of the following key components:
+
+### Docker Containers
+
+- **PostgreSQL**: Database for mail, DNS config, and other data
+- **Redis**: Caching and queueing service
+- **Mailserver**: Postfix and Dovecot with PostgreSQL backend
+- **Webmail**: Roundcube webmail interface
+- **Config API**: REST API for DNS and certificate management
+- **Admin Panel**: Web interface for server management
+- **Nginx**: Reverse proxy for all web services
+- **ClamAV**: Antivirus scanning
+- **Fail2ban**: Intrusion prevention
+
+### Key Files
+
+- **deploy.sh**: Main deployment script to start all containers
+- **docker-compose.yml**: Docker container configuration
+- **cleanup.sh**: Utility to remove legacy scripts (run after confirming everything works)
+- **.env**: Environment variables for service configuration
+
+## Admin Panel Features
+
+The admin panel provides a web interface for:
+
+- Managing mail domains and accounts
+- DNS record configuration
+- SSL certificate management
+- Server monitoring and logs
+- System settings
+
+## First-Time Setup Wizard
+
+The wizard guides you through:
+
+1. Setting a secure admin password
+2. Configuring your domain and Cloudflare API credentials
+3. Initializing the database schema
+4. Getting started with your new server
 
 ## Secure Credential Management
 
 TaskBlob uses a master password system for enhanced security:
 
-- You only need to remember **one master password**
-- All service passwords are automatically generated with high entropy
-- Service credentials are securely encrypted using AES-256-GCM
-- The encrypted credentials file can be safely backed up
+- Set a single master password for admin access
+- Service passwords are securely stored in the database
+- All credentials are managed through the admin panel
+- No plaintext passwords in configuration files
 
-When you run `init-credentials.js`, the system will:
-1. Ask for your master password
-2. Generate strong random passwords for all services
-3. Encrypt these passwords with your master password
-4. Update the .env file to only contain the master password
+## Troubleshooting
 
-This approach significantly improves security by:
-- Eliminating weak/reused passwords
-- Removing plaintext credentials from configuration files
-- Providing a single point of authentication
-- Making credential rotation simple
+If you encounter issues during deployment:
 
-## Components
+1. Check container logs:
+   ```bash
+   docker logs admin-panel
+   docker logs postgres
+   ```
 
-- **Mail Server**: Postfix, Dovecot, PostgreSQL backend
-- **Admin Panel**: Web interface accessible at admin.yourdomain.com
-- **Config API**: REST API for DNS and certificate management
-- **Webmail**: Roundcube webmail interface
-- **Nginx**: Reverse proxy for all web services
-- **PostgreSQL**: Database for all services
-- **Redis**: Caching and queuing
+2. Verify database connectivity:
+   ```bash
+   docker exec postgres pg_isready -U postgres
+   ```
 
-## Admin Panel
-
-The admin panel provides a web interface for:
-
-- Managing domains
-- Managing mail accounts
-- Viewing server status
-- Monitoring logs
-- Managing SSL certificates
-
-Access it at https://admin.yourdomain.com after setup.
-
-## Manual Scripts
-
-Run individual setup components manually:
-
-- `./setup-dns.sh yourdomain.com`: Configure DNS
-- `./setup-firewall.sh`: Configure firewall rules
-- `./setup-postgres.sh`: Set up PostgreSQL
-- `./setup-mail.sh`: Configure mail server
-
-## Security Notes
-
-- All sensitive values are loaded from environment variables
-- No hardcoded credentials are stored in the repository
-- SSL certificates are automatically renewed
-- Fail2ban is configured for basic protection
+3. Check the admin panel is accessible:
+   ```bash
+   curl http://localhost:3001/login
+   ```
 
 ## Contributing
 
 Pull requests are welcome. Please ensure that no sensitive or identifying information is included in your contributions.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

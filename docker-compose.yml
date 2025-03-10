@@ -17,6 +17,11 @@ services:
       - "5432:5432"
     networks:
       - server_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Redis for caching and queueing
   redis:
@@ -39,7 +44,8 @@ services:
     container_name: mailserver
     restart: always
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - mail_data:/var/mail
       - ./mail/config:/etc/mail
@@ -69,8 +75,8 @@ services:
     container_name: webmail
     restart: always
     depends_on:
-      - postgres
-      - mailserver
+      postgres:
+        condition: service_healthy
     volumes:
       - webmail_data:/var/www/html
     ports:
@@ -94,7 +100,8 @@ services:
     container_name: config-api
     restart: always
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./dns:/app/dns
       - ./ssl:/app/ssl
@@ -115,14 +122,16 @@ services:
   admin-panel:
     build:
       context: ./config-admin
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.updated
     container_name: admin-panel
     restart: always
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./dkim:/app/dkim
       - ./ssl:/app/ssl
+      - ./dns:/app/dns
       - /var/log:/var/log:ro
     ports:
       - "3001:3001"
@@ -134,8 +143,14 @@ services:
       - POSTGRES_DB=postgres
       - DOMAIN=${DOMAIN:-example.com}
       - ADMIN_USER=${ADMIN_USER:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme!}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-FFf3t5h5aJBnTd}
       - SESSION_SECRET=${SESSION_SECRET:-secure_admin_secret_key}
+      - FIRST_TIME_SETUP=true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - server_net
 

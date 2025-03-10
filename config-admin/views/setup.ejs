@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskBlob - First-Time Setup</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding-top: 50px;
+    }
+    .setup-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+    }
+    .setup-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .setup-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #343a40;
+    }
+    .setup-subtitle {
+      font-size: 16px;
+      color: #6c757d;
+      margin-top: 10px;
+    }
+    .setup-step {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .setup-step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: #e9ecef;
+      color: #6c757d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      margin-right: 15px;
+    }
+    .setup-step.active .setup-step-number {
+      background-color: #0d6efd;
+      color: #fff;
+    }
+    .setup-step.completed .setup-step-number {
+      background-color: #198754;
+      color: #fff;
+    }
+    .setup-step-content {
+      flex: 1;
+    }
+    .setup-step-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .setup-step-description {
+      font-size: 14px;
+      color: #6c757d;
+    }
+    .setup-form {
+      margin-top: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .btn-primary {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      padding: 10px 20px;
+    }
+    .alert {
+      margin-bottom: 20px;
+    }
+    .setup-progress {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    .setup-progress:before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 40px;
+      right: 40px;
+      height: 2px;
+      background-color: #e9ecef;
+      z-index: 1;
+    }
+    .setup-progress-step {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: #e9ecef;
+      color: #6c757d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      position: relative;
+      z-index: 2;
+    }
+    .setup-progress-step.active {
+      background-color: #0d6efd;
+      color: #fff;
+    }
+    .setup-progress-step.completed {
+      background-color: #198754;
+      color: #fff;
+    }
+    .setup-progress-label {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 5px;
+      color: #6c757d;
+      max-width: 80px;
+      margin-left: -25px;
+    }
+    .completed-icon {
+      font-size: 64px;
+      color: #198754;
+      text-align: center;
+      margin: 30px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="setup-container">
+      <div class="setup-header">
+        <h1 class="setup-title">TaskBlob Server Setup</h1>
+        <p class="setup-subtitle">Complete the following steps to set up your server</p>
+      </div>
+      
+      <% if (error) { %>
+        <div class="alert alert-danger" role="alert">
+          <%= error %>
+        </div>
+      <% } %>
+      
+      <div class="setup-progress">
+        <div class="d-flex flex-column align-items-center">
+          <div class="setup-progress-step <%= parseInt(step) >= 1 ? 'active' : '' %> <%= parseInt(step) > 1 ? 'completed' : '' %>">
+            1
+          </div>
+          <div class="setup-progress-label">Admin Password</div>
+        </div>
+        <div class="d-flex flex-column align-items-center">
+          <div class="setup-progress-step <%= parseInt(step) >= 2 ? 'active' : '' %> <%= parseInt(step) > 2 ? 'completed' : '' %>">
+            2
+          </div>
+          <div class="setup-progress-label">DNS Configuration</div>
+        </div>
+        <div class="d-flex flex-column align-items-center">
+          <div class="setup-progress-step <%= parseInt(step) >= 3 ? 'active' : '' %> <%= parseInt(step) > 3 ? 'completed' : '' %>">
+            3
+          </div>
+          <div class="setup-progress-label">Database Setup</div>
+        </div>
+        <div class="d-flex flex-column align-items-center">
+          <div class="setup-progress-step <%= parseInt(step) >= 4 ? 'active' : '' %>">
+            4
+          </div>
+          <div class="setup-progress-label">Complete</div>
+        </div>
+      </div>
+      
+      <% if (parseInt(step) === 1) { %>
+        <!-- Step 1: Admin Password Setup -->
+        <div class="setup-form">
+          <h3 class="mb-4">Set Administrator Password</h3>
+          <p class="text-muted mb-4">Create a secure password for the admin user. This password will be used to access the admin panel.</p>
+          
+          <form action="/setup/step/1" method="POST">
+            <div class="form-group">
+              <label for="newPassword" class="form-label">New Password</label>
+              <input type="password" class="form-control" id="newPassword" name="newPassword" placeholder="Enter new secure password" required>
+              <div class="form-text text-muted">Use at least 12 characters with a mix of letters, numbers, and symbols</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="confirmPassword" class="form-label">Confirm Password</label>
+              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" required>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <button type="submit" class="btn btn-primary">Continue</button>
+            </div>
+          </form>
+        </div>
+      <% } else if (parseInt(step) === 2) { %>
+        <!-- Step 2: DNS Configuration -->
+        <div class="setup-form">
+          <h3 class="mb-4">DNS Configuration</h3>
+          <p class="text-muted mb-4">Configure your domain and Cloudflare API credentials for DNS management.</p>
+          
+          <form action="/setup/step/2" method="POST">
+            <div class="form-group">
+              <label for="domain" class="form-label">Primary Domain</label>
+              <input type="text" class="form-control" id="domain" name="domain" placeholder="example.com" value="<%= formData.domain || '' %>" required>
+              <div class="form-text text-muted">The primary domain for your mail server</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="cloudflareEmail" class="form-label">Cloudflare Email</label>
+              <input type="email" class="form-control" id="cloudflareEmail" name="cloudflareEmail" placeholder="your-email@example.com" value="<%= formData.cloudflareEmail || '' %>" required>
+              <div class="form-text text-muted">Email address associated with your Cloudflare account</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="cloudflareApiKey" class="form-label">Cloudflare API Key</label>
+              <input type="password" class="form-control" id="cloudflareApiKey" name="cloudflareApiKey" placeholder="API key" required>
+              <div class="form-text text-muted">Global API key from your Cloudflare profile</div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="/setup?step=1" class="btn btn-secondary me-md-2">Back</a>
+              <button type="submit" class="btn btn-primary">Continue</button>
+            </div>
+          </form>
+        </div>
+      <% } else if (parseInt(step) === 3) { %>
+        <!-- Step 3: Database Schema Setup -->
+        <div class="setup-form">
+          <h3 class="mb-4">Database Schema Setup</h3>
+          <p class="text-muted mb-4">Initialize the database with the necessary tables for your mail server and DNS management.</p>
+          
+          <div class="alert alert-info" role="alert">
+            <strong>Info:</strong> This step will create the following database tables:
+            <ul class="mb-0 mt-2">
+              <li>Mail domains</li>
+              <li>Mail users</li>
+              <li>DNS records</li>
+              <li>System settings</li>
+            </ul>
+          </div>
+          
+          <form action="/setup/step/3" method="POST">
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="/setup?step=2" class="btn btn-secondary me-md-2">Back</a>
+              <button type="submit" class="btn btn-primary">Initialize Database</button>
+            </div>
+          </form>
+        </div>
+      <% } else if (parseInt(step) === 4) { %>
+        <!-- Step 4: Setup Complete -->
+        <div class="text-center">
+          <div class="completed-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
+              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+            </svg>
+          </div>
+          <h3 class="mb-4">Setup Complete!</h3>
+          <p class="text-muted mb-4">Your TaskBlob server has been successfully set up and is ready to use.</p>
+          
+          <div class="alert alert-success" role="alert">
+            <p><strong>What's Next?</strong></p>
+            <ul class="text-start mb-0">
+              <li>Add email domains and users</li>
+              <li>Configure DNS records</li>
+              <li>Set up SSL certificates</li>
+              <li>Check server logs and monitor performance</li>
+            </ul>
+          </div>
+          
+          <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+      <% } %>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -58,15 +58,18 @@ if [[ "$ZONE_CHECK" == *'"result":[]'* ]]; then
     fi
 elif [[ "$ZONE_CHECK" == *'"success":true'* ]]; then
     echo -e "${GREEN}Zone for domain ${DOMAIN} exists in Cloudflare!${NC}"
-    ZONE_ID=$(echo $ZONE_CHECK | grep -o '"id":"[^"]*' | cut -d'"' -f4)
+    # Extract ONLY the zone ID (first occurrence)
+    ZONE_ID=$(echo $ZONE_CHECK | grep -o '"id":"[^"]*' | head -n 1 | cut -d'"' -f4)
     echo -e "Zone ID: ${ZONE_ID}"
     
     # Check if we can list DNS records for this zone (with more verbose output)
     echo -e "\n${GREEN}Checking if we can list DNS records for this zone...${NC}"
-    echo -e "Using URL: https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records"
+    # Use a clean URL
+    API_URL="https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records"
+    echo -e "Using URL: ${API_URL}"
     echo -e "Headers: X-Auth-Email: ${CLOUDFLARE_EMAIL}, X-Auth-Key: ${CLOUDFLARE_API_KEY:0:5}..."
     
-    DNS_LIST=$(curl -s -v -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+    DNS_LIST=$(curl -s -v -X GET "${API_URL}" \
          -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
          -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
          -H "Content-Type: application/json" 2>&1)
@@ -87,7 +90,8 @@ elif [[ "$ZONE_CHECK" == *'"success":true'* ]]; then
     
     # Try creating a simple test record to verify write permissions
     echo -e "\n${GREEN}Attempting to create a test DNS record...${NC}"
-    TEST_RECORD=$(curl -s -v -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+    API_CREATE_URL="https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records"
+    TEST_RECORD=$(curl -s -v -X POST "${API_CREATE_URL}" \
          -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
          -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
          -H "Content-Type: application/json" \
@@ -104,7 +108,8 @@ elif [[ "$ZONE_CHECK" == *'"success":true'* ]]; then
         
         # Delete the test record
         echo -e "\n${GREEN}Cleaning up the test record...${NC}"
-        DELETE_RECORD=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}" \
+        DELETE_URL="https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}"
+        DELETE_RECORD=$(curl -s -X DELETE "${DELETE_URL}" \
              -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
              -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
              -H "Content-Type: application/json")

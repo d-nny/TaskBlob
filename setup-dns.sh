@@ -237,35 +237,172 @@ echo -e "${GREEN}Pushing DNS configuration to Cloudflare via API...${NC}"
 echo -e "API URL: ${API_URL}/api/dns"
 echo -e "Making API request..."
 
-# Try both approaches: headers and database stored credentials
+# Create DNS directory if it doesn't exist
+mkdir -p ./dns
+
+# Save DNS config to file for backup
+echo -e "${GREEN}Saving DNS configuration to dns/${DOMAIN}_config.json...${NC}"
+echo "$DNS_CONFIG" > "./dns/${DOMAIN}_config.json"
+
+# First try using the API
+echo -e "${GREEN}Trying API approach first...${NC}"
 DNS_RESPONSE=$(curl -s -v -X POST \
   -H "Content-Type: application/json" \
   -H "X-Cloudflare-Email: ${CLOUDFLARE_EMAIL}" \
   -H "X-Cloudflare-Api-Key: ${CLOUDFLARE_API_KEY}" \
+  --max-time 15 \
+  --retry 2 \
   -d "$DNS_CONFIG" ${API_URL}/api/dns 2>&1)
-CURL_EXIT_CODE=$?
+API_CURL_EXIT_CODE=$?
 
 # Save API response for debugging
 echo "$DNS_RESPONSE" > "/tmp/dns_api_response.log"
 echo -e "API response saved to /tmp/dns_api_response.log for debugging"
 
-if [ $CURL_EXIT_CODE -ne 0 ]; then
-    echo -e "${RED}Error: curl command failed with exit code $CURL_EXIT_CODE${NC}"
-    echo -e "${RED}Response: $DNS_RESPONSE${NC}"
-    echo -e "${YELLOW}Possible issues:${NC}"
-    echo -e "1. The API service might be unreachable"
-    echo -e "2. Connection might be blocked by firewall"
-    exit 1
+# Check if API approach succeeded
+API_SUCCESS=false
+if [ $API_CURL_EXIT_CODE -eq 0 ] && [[ "$DNS_RESPONSE" != *"error"* ]]; then
+    API_SUCCESS=true
+    echo -e "${GREEN}Successfully created DNS configuration via API${NC}"
+else
+    echo -e "${YELLOW}API approach failed with exit code $API_CURL_EXIT_CODE${NC}"
+    echo -e "${YELLOW}Response: $DNS_RESPONSE${NC}"
+    
+    # Try direct Cloudflare API approach as fallback
+    echo -e "${GREEN}Trying direct Cloudflare API approach as fallback...${NC}"
+    
+    # Extract domain info
+    DOMAIN_PARTS=(${DOMAIN//./ })
+    ROOT_DOMAIN="${DOMAIN_PARTS[-2]}.${DOMAIN_PARTS[-1]}"
+    
+    echo -e "${GREEN}Getting zone ID for ${ROOT_DOMAIN}...${NC}"
+    ZONE_RESPONSE=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${ROOT_DOMAIN}" \
+        -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+        -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+        -H "Content-Type: application/json")
+    
+    if [[ "$ZONE_RESPONSE" == *'"result":[]'* ]]; then
+        echo -e "${RED}Zone not found for domain ${ROOT_DOMAIN}!${NC}"
+        echo -e "${YELLOW}You need to add this domain to your Cloudflare account first.${NC}"
+        echo -e "\nContinuing with the setup, but DNS records won't be updated."
+    elif [[ "$ZONE_RESPONSE" == *'"success":true'* ]]; then
+        # Extract zone ID
+        ZONE_ID=$(echo $ZONE_RESPONSE | grep -o '"id":"[^"]*' | head -n 1 | cut -d'"' -f4)
+        
+        if [ -n "$ZONE_ID" ]; then
+            echo -e "${GREEN}Zone ID found: ${ZONE_ID}${NC}"
+            
+            # Process A records
+            if [ -n "$(echo $DNS_CONFIG | grep -o '"a":\[')" ]; then
+                echo -e "${GREEN}Processing A records...${NC}"
+                # Extract A records using jq if available, otherwise keep simple approach
+                if command -v jq &> /dev/null; then
+                    A_RECORDS=$(echo $DNS_CONFIG | jq -c '.config.records.a[]')
+                    for record in $A_RECORDS; do
+                        NAME=$(echo $record | jq -r '.name')
+                        CONTENT=$(echo $record | jq -r '.content')
+                        PROXIED=$(echo $record | jq -r '.proxied // false')
+                        
+                        NAME=${NAME//@/}
+                        if [ -z "$NAME" ]; then
+                            RECORD_NAME="${ROOT_DOMAIN}"
+                        else
+                            RECORD_NAME="${NAME}.${ROOT_DOMAIN}"
+                        fi
+                        
+                        echo -e "${GREEN}Creating/Updating A record: ${RECORD_NAME} -> ${CONTENT}${NC}"
+                        CF_RECORD="{\"type\":\"A\",\"name\":\"$NAME\",\"content\":\"$CONTENT\",\"ttl\":1,\"proxied\":$PROXIED}"
+                        
+                        curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+                            -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+                            -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+                            -H "Content-Type: application/json" \
+                            --data "$CF_RECORD" > /dev/null
+                    done
+                else
+                    echo -e "${YELLOW}jq not installed, using simplified A record processing${NC}"
+                    # Process a few key A records manually
+                    for NAME in "" "www" "mail" "webmail"; do
+                        if [ "$NAME" == "mail" ]; then
+                            CONTENT="${MAIL_IP}"
+                        else
+                            CONTENT="${PRIMARY_IP}"
+                        fi
+                        
+                        if [ -z "$NAME" ]; then
+                            RECORD_NAME="${ROOT_DOMAIN}"
+                            NAME="@"
+                        else
+                            RECORD_NAME="${NAME}.${ROOT_DOMAIN}"
+                        fi
+                        
+                        echo -e "${GREEN}Creating/Updating A record: ${RECORD_NAME} -> ${CONTENT}${NC}"
+                        CF_RECORD="{\"type\":\"A\",\"name\":\"$NAME\",\"content\":\"$CONTENT\",\"ttl\":1,\"proxied\":false}"
+                        
+                        curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+                            -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+                            -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+                            -H "Content-Type: application/json" \
+                            --data "$CF_RECORD" > /dev/null
+                    done
+                fi
+            fi
+            
+            # Create MX record
+            echo -e "${GREEN}Creating MX record: mail.${DOMAIN}${NC}"
+            MX_RECORD="{\"type\":\"MX\",\"name\":\"@\",\"content\":\"mail.${DOMAIN}\",\"priority\":10,\"ttl\":1}"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+                -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+                -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+                -H "Content-Type: application/json" \
+                --data "$MX_RECORD" > /dev/null
+                
+            # Create SPF record
+            echo -e "${GREEN}Creating SPF record${NC}"
+            SPF_RECORD="{\"type\":\"TXT\",\"name\":\"@\",\"content\":\"v=spf1 mx ~all\",\"ttl\":1}"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+                -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+                -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+                -H "Content-Type: application/json" \
+                --data "$SPF_RECORD" > /dev/null
+                
+            # Create DMARC record
+            echo -e "${GREEN}Creating DMARC record${NC}"
+            DMARC_RECORD="{\"type\":\"TXT\",\"name\":\"_dmarc\",\"content\":\"v=DMARC1; p=none; rua=mailto:admin@${DOMAIN}\",\"ttl\":1}"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+                -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+                -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+                -H "Content-Type: application/json" \
+                --data "$DMARC_RECORD" > /dev/null
+                
+            # Create DKIM record if we have it
+            echo -e "${GREEN}Creating DKIM record${NC}"
+            DKIM_RECORD="{\"type\":\"TXT\",\"name\":\"mail._domainkey\",\"content\":\"${DKIM_RECORD}\",\"ttl\":1}"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+                -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+                -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+                -H "Content-Type: application/json" \
+                --data "$DKIM_RECORD" > /dev/null
+                
+            echo -e "${GREEN}Basic DNS records created directly via Cloudflare API${NC}"
+            echo -e "${YELLOW}Note: SRV records not created in fallback mode. Use Cloudflare dashboard to add them manually.${NC}"
+        else
+            echo -e "${RED}Could not extract zone ID from response.${NC}"
+            echo -e "${YELLOW}Check your Cloudflare credentials and ensure the domain is added to your account.${NC}"
+        fi
+    else
+        echo -e "${RED}Error checking zone:${NC}"
+        echo -e "Error details: $ZONE_RESPONSE"
+    fi
 fi
 
-if [[ "$DNS_RESPONSE" == *"error"* ]]; then
-    echo -e "${RED}Error creating DNS configuration: $DNS_RESPONSE${NC}"
-    echo -e "${YELLOW}Possible issues:${NC}"
-    echo -e "1. Domain configuration format might be invalid"
-    echo -e "2. API might not have access to PostgreSQL database"
-    echo -e "3. Cloudflare credentials might be invalid"
-    echo -e "\nCheck logs with: docker logs config-api"
-    exit 1
+# Let API or direct approach continue
+if [ "$API_SUCCESS" = false ]; then
+    echo -e "${YELLOW}Warning: DNS configuration may not be complete.${NC}"
+    echo -e "${YELLOW}You may need to manually configure DNS records in Cloudflare.${NC}"
+    echo -e "${YELLOW}Continuing with the rest of the setup...${NC}"
+else
+    echo -e "${GREEN}DNS configuration completed successfully.${NC}"
 fi
 
 # 5. Update DNS records in Cloudflare

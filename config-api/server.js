@@ -425,27 +425,74 @@ app.get('/api/dns/:domain', async (req, res) => {
 
 app.post('/api/dns', async (req, res) => {
   try {
+    logger.info('DNS configuration request received');
+    logger.debug('Request body:', req.body);
+    
     const { domain, config } = req.body;
     
     if (!domain || !config) {
+      logger.warn('Invalid request: Missing domain or config');
       return res.status(400).json({ error: 'Domain and config are required' });
     }
     
-    const [dnsConfig, created] = await DNSConfig.findOrCreate({
-      where: { domain },
-      defaults: { config, lastUpdated: new Date() }
-    });
-    
-    if (!created) {
-      dnsConfig.config = config;
-      dnsConfig.lastUpdated = new Date();
-      await dnsConfig.save();
+    // Validate database connection before proceeding
+    try {
+      await sequelize.authenticate();
+      logger.info('Database connection is valid');
+    } catch (dbError) {
+      logger.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection error', 
+        details: dbError.message 
+      });
     }
     
-    res.status(created ? 201 : 200).json(dnsConfig);
+    try {
+      const [dnsConfig, created] = await DNSConfig.findOrCreate({
+        where: { domain },
+        defaults: { config, lastUpdated: new Date() }
+      });
+      
+      if (!created) {
+        logger.info(`Updating existing DNS config for ${domain}`);
+        dnsConfig.config = config;
+        dnsConfig.lastUpdated = new Date();
+        await dnsConfig.save();
+      } else {
+        logger.info(`Created new DNS config for ${domain}`);
+      }
+      
+      // Save config to file as backup (useful for debugging)
+      try {
+        const dnsDir = path.join(__dirname, 'dns');
+        if (!fs.existsSync(dnsDir)) {
+          fs.mkdirSync(dnsDir, { recursive: true });
+        }
+        fs.writeFileSync(
+          path.join(dnsDir, `${domain}.json`), 
+          JSON.stringify(config, null, 2)
+        );
+        logger.info(`DNS config for ${domain} saved to file`);
+      } catch (fileError) {
+        logger.warn(`Could not save DNS config to file: ${fileError.message}`);
+        // Continue anyway as this is not critical
+      }
+      
+      res.status(created ? 201 : 200).json(dnsConfig);
+    } catch (dbOpError) {
+      logger.error('Database operation error:', dbOpError);
+      return res.status(500).json({ 
+        error: 'Database operation failed', 
+        details: dbOpError.message 
+      });
+    }
   } catch (error) {
     logger.error('Error creating/updating DNS config:', error);
-    res.status(500).json({ error: 'Failed to create/update DNS configuration' });
+    res.status(500).json({ 
+      error: 'Failed to create/update DNS configuration',
+      details: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+    });
   }
 });
 

@@ -11,11 +11,20 @@ NC='\033[0m' # No Color
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
+  echo -e "${GREEN}Loaded environment variables from .env file${NC}"
 fi
 
 DOMAIN=${1:-"$DOMAIN"}
 PRIMARY_IP=${PRIMARY_IP}
 MAIL_IP=${MAIL_IP}
+
+# Debug environment variables (partial for security)
+echo -e "${GREEN}Using the following configuration:${NC}"
+echo -e "  DOMAIN: ${DOMAIN}"
+echo -e "  PRIMARY_IP: ${PRIMARY_IP}"
+echo -e "  MAIL_IP: ${MAIL_IP:-$PRIMARY_IP} (using PRIMARY_IP if not set)"
+echo -e "  CLOUDFLARE_EMAIL: ${CLOUDFLARE_EMAIL}"
+echo -e "  CLOUDFLARE_API_KEY: ${CLOUDFLARE_API_KEY:0:5}... (partially hidden for security)"
 
 # Prompt for IP addresses if not set
 if [ -z "$PRIMARY_IP" ]; then
@@ -212,8 +221,20 @@ echo "$DNS_CONFIG" > "../${DOMAIN}_config.json"
 
 # 3. Push DNS configuration to API for Cloudflare integration
 echo -e "${GREEN}Pushing DNS configuration to Cloudflare via API...${NC}"
-DNS_RESPONSE=$(curl -s -v -X POST -H "Content-Type: application/json" -d "$DNS_CONFIG" ${API_URL}/api/dns 2>&1)
+echo -e "API URL: ${API_URL}/api/dns"
+echo -e "Making API request with Cloudflare credentials..."
+
+# Pass Cloudflare credentials explicitly in the curl request
+DNS_RESPONSE=$(curl -s -v -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Cloudflare-Email: ${CLOUDFLARE_EMAIL}" \
+  -H "X-Cloudflare-Api-Key: ${CLOUDFLARE_API_KEY}" \
+  -d "$DNS_CONFIG" ${API_URL}/api/dns 2>&1)
 CURL_EXIT_CODE=$?
+
+# Save API response for debugging
+echo "$DNS_RESPONSE" > "/tmp/dns_api_response.log"
+echo -e "API response saved to /tmp/dns_api_response.log for debugging"
 
 if [ $CURL_EXIT_CODE -ne 0 ]; then
     echo -e "${RED}Error: curl command failed with exit code $CURL_EXIT_CODE${NC}"
@@ -236,7 +257,10 @@ fi
 
 # 4. Update DNS records in Cloudflare
 echo -e "${GREEN}Updating DNS records in Cloudflare...${NC}"
-UPDATE_RESPONSE=$(curl -s -X POST ${API_URL}/api/dns/${DOMAIN}/update)
+UPDATE_RESPONSE=$(curl -s -X POST \
+  -H "X-Cloudflare-Email: ${CLOUDFLARE_EMAIL}" \
+  -H "X-Cloudflare-Api-Key: ${CLOUDFLARE_API_KEY}" \
+  ${API_URL}/api/dns/${DOMAIN}/update)
 if [[ "$UPDATE_RESPONSE" == *"error"* ]]; then
     echo -e "${RED}Error updating DNS records: $UPDATE_RESPONSE${NC}"
     echo -e "${YELLOW}Possible issues:${NC}"

@@ -131,6 +131,11 @@ echo -e "Do you want to run DNS setup now?"
 read -p "Setup DNS? (y/N): " setup_dns
 
 if [[ "$setup_dns" == "y" || "$setup_dns" == "Y" ]]; then
+  # Load environment variables from .env for local verification
+  if [ -f .env ]; then
+    source .env
+  fi
+  
   # Verify environment variables before running DNS setup
   if [ -z "$CLOUDFLARE_API_KEY" ] || [ -z "$CLOUDFLARE_EMAIL" ]; then
     echo -e "${YELLOW}Warning: CLOUDFLARE_API_KEY or CLOUDFLARE_EMAIL environment variables not set.${NC}"
@@ -140,11 +145,16 @@ if [[ "$setup_dns" == "y" || "$setup_dns" == "Y" ]]; then
       echo -e "DNS setup skipped. You can run it later with: node bootstrap.js ./setup-dns.sh"
       continue_dns="n"
     fi
+  else
+    echo -e "${GREEN}Cloudflare credentials found:${NC}"
+    echo -e "  Email: ${CLOUDFLARE_EMAIL}"
+    echo -e "  API Key: ${CLOUDFLARE_API_KEY:0:5}... (partially hidden for security)"
   fi
   
   if [[ "$continue_dns" != "n" ]]; then
     echo -e "${GREEN}Running DNS setup...${NC}"
-    node bootstrap.js ./setup-dns.sh
+    # Pass the environment variables explicitly to ensure they're available to setup-dns.sh
+    CLOUDFLARE_API_KEY="$CLOUDFLARE_API_KEY" CLOUDFLARE_EMAIL="$CLOUDFLARE_EMAIL" node bootstrap.js ./setup-dns.sh
     
     # Check if DNS setup succeeded
     if [ $? -ne 0 ]; then

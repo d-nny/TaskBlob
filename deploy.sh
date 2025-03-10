@@ -26,7 +26,7 @@ deploy_containers() {
     docker-compose down
     
     echo -e "\n${YELLOW}Building and starting containers...${NC}"
-    docker-compose -f docker-compose.updated.yml up -d --build
+    docker-compose -f docker-compose.yml up -d --build
     
     echo -e "\n${YELLOW}Checking container status...${NC}"
     sleep 5 # Give containers time to initialize

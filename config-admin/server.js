@@ -48,6 +48,15 @@ const isAuthenticated = (req, res, next) => {
   res.redirect('/login');
 };
 
+// Root route - redirect to dashboard or login
+app.get('/', (req, res) => {
+  if (req.session.user) {
+    res.redirect('/dashboard');
+  } else {
+    res.redirect('/login');
+  }
+});
+
 // Login page
 app.get('/login', (req, res) => {
   res.render('login', { error: null });

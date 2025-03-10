@@ -1,31 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server Admin - <%= typeof title !== 'undefined' ? title : 'Admin Panel' %></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
-    <style>
-        body {
-            padding-top: 56px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .main-content {
-            flex: 1;
-            padding: 1.5rem;
-        }
-        footer {
-            margin-top: auto;
-            background-color: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-            padding: 1rem 0;
-            text-align: center;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskBlob Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+  <style>
+    .sidebar {
+      min-height: calc(100vh - 56px);
+      background-color: #f8f9fa;
+      border-right: 1px solid #dee2e6;
+    }
+    .nav-link {
+      color: #495057;
+    }
+    .nav-link:hover {
+      background-color: #e9ecef;
+    }
+    .nav-link.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .main-content {
+      padding: 20px;
+    }
+    .card {
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 <body>
-    <!-- Main Content Container -->
-    <main class="main-content">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="/dashboard">TaskBlob Admin</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ml-auto">
+        <% if (typeof user !== 'undefined') { %>
+          <li class="nav-item">
+            <span class="nav-link text-light"><i class="bi bi-person-circle"></i> <%= user.username %></span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+          </li>
+        <% } %>
+      </ul>
+    </div>
+  </nav>
+
+  <% if (typeof user !== 'undefined') { %>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-2 sidebar p-0">
+          <div class="list-group list-group-flush">
+            <a href="/dashboard" class="list-group-item list-group-item-action <%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>">
+              <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+            <a href="/domains" class="list-group-item list-group-item-action <%= typeof activePage !== 'undefined' && activePage === 'domains' ? 'active' : '' %>">
+              <i class="bi bi-globe"></i> Domains
+            </a>
+            <a href="/accounts" class="list-group-item list-group-item-action <%= typeof activePage !== 'undefined' && activePage === 'accounts' ? 'active' : '' %>">
+              <i class="bi bi-people"></i> Email Accounts
+            </a>
+            <a href="/dns" class="list-group-item list-group-item-action <%= typeof activePage !== 'undefined' && activePage === 'dns' ? 'active' : '' %>">
+              <i class="bi bi-diagram-3"></i> DNS Management
+            </a>
+            <a href="/certificates" class="list-group-item list-group-item-action <%= typeof activePage !== 'undefined' && activePage === 'certificates' ? 'active' : '' %>">
+              <i class="bi bi-shield-lock"></i> SSL Certificates
+            </a>
+            <a href="/logs" class="list-group-item list-group-item-action <%= typeof activePage !== 'undefined' && activePage === 'logs' ? 'active' : '' %>">
+              <i class="bi bi-file-text"></i> Logs
+            </a>
+          </div>
+        </div>
+        <div class="col-md-10 main-content">
+  <% } else { %>
+    <div class="container mt-5">
+  <% } %>

@@ -1,120 +1,128 @@
-<%- include('layout', { title: 'Dashboard', active: 'dashboard', user: user }) %>
+<%- include('partials/header') %>
 
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2">Server Dashboard</h1>
-        <div class="btn-group">
-            <a href="/domains/add" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-circle"></i> Add Domain
-            </a>
-            <a href="/accounts/add" class="btn btn-sm btn-success">
-                <i class="bi bi-plus-circle"></i> Add Email Account
-            </a>
-        </div>
-    </div>
-
-    <div class="row">
-        <!-- Server Status -->
-        <div class="col-md-6 mb-4">
-            <div class="card card-dashboard h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-server"></i> Server Status</span>
-                    <span class="badge bg-success status-badge">Online</span>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">System Resources</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">Disk Usage</h6>
-                    <pre><%= diskUsage %></pre>
-                    
-                    <h6 class="card-subtitle mb-2 text-muted">Memory Usage</h6>
-                    <pre><%= memoryUsage %></pre>
-                </div>
-            </div>
-        </div>
-
-        <!-- Domains Overview -->
-        <div class="col-md-6 mb-4">
-            <div class="card card-dashboard h-100">
-                <div class="card-header">
-                    <i class="bi bi-globe"></i> Mail Domains Overview
-                </div>
-                <div class="card-body">
-                    <% if (domains && domains.length > 0) { %>
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Domain</th>
-                                        <th scope="col">Description</th>
-                                        <th scope="col">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% domains.forEach(domain => { %>
-                                        <tr>
-                                            <td><%= domain.domain %></td>
-                                            <td><%= domain.description %></td>
-                                            <td>
-                                                <span class="badge bg-success">Active</span>
-                                            </td>
-                                        </tr>
-                                    <% }); %>
-                                </tbody>
-                            </table>
-                        </div>
-                    <% } else { %>
-                        <div class="alert alert-info">
-                            No mail domains configured yet. 
-                            <a href="/domains/add" class="alert-link">Add your first domain</a>
-                        </div>
-                    <% } %>
-                </div>
-                <div class="card-footer text-muted text-end">
-                    <a href="/domains" class="btn btn-sm btn-outline-primary">Manage Domains</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- SSL Certificates -->
-        <div class="col-md-6 mb-4">
-            <div class="card card-dashboard h-100">
-                <div class="card-header">
-                    <i class="bi bi-shield-lock"></i> SSL Certificates
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        SSL certificates are automatically renewed 30 days before expiration.
-                    </div>
-                    <div class="d-grid">
-                        <a href="/certificates" class="btn btn-outline-primary">Manage Certificates</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Links -->
-        <div class="col-md-6 mb-4">
-            <div class="card card-dashboard h-100">
-                <div class="card-header">
-                    <i class="bi bi-link-45deg"></i> Quick Links
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        <a href="/accounts" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            Email Accounts
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                        <a href="/logs" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            Server Logs
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                        <a href="https://webmail.<%= process.env.DOMAIN %>" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            Webmail Interface
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Dashboard</h1>
+  <div>
+    <a href="/domains/add" class="btn btn-primary"><i class="bi bi-plus"></i> Add Domain</a>
+  </div>
 </div>
+
+<div class="row">
+  <!-- Server Status -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5>Server Status</h5>
+      </div>
+      <div class="card-body">
+        <h6>Disk Usage</h6>
+        <pre class="bg-light p-2 mb-3"><%= diskUsage %></pre>
+        
+        <h6>Memory Usage</h6>
+        <pre class="bg-light p-2"><%= memoryUsage %></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Domain Overview -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5>Domain Overview</h5>
+      </div>
+      <div class="card-body">
+        <% if (domains && domains.length > 0) { %>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% domains.forEach(function(domain) { %>
+                <tr>
+                  <td><%= domain.domain %></td>
+                  <td>
+                    <% if (domain.active) { %>
+                      <span class="badge badge-success">Active</span>
+                    <% } else { %>
+                      <span class="badge badge-secondary">Inactive</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <a href="/dns?domain=<%= domain.domain %>" class="btn btn-sm btn-info">
+                      <i class="bi bi-diagram-3"></i> DNS
+                    </a>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        <% } else { %>
+          <div class="alert alert-info">
+            No domains configured yet. <a href="/domains/add">Add a domain</a> to get started.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <!-- Quick Links -->
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h5>Quick Links</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <i class="bi bi-envelope-fill" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Email</h5>
+                <p>Manage email accounts and settings</p>
+                <a href="/accounts" class="btn btn-sm btn-primary">Manage</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <i class="bi bi-globe" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Domains</h5>
+                <p>Add and configure domains</p>
+                <a href="/domains" class="btn btn-sm btn-primary">Manage</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <i class="bi bi-shield-lock" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">SSL</h5>
+                <p>Manage SSL certificates</p>
+                <a href="/certificates" class="btn btn-sm btn-primary">Manage</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <i class="bi bi-file-text" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Logs</h5>
+                <p>View system logs</p>
+                <a href="/logs" class="btn btn-sm btn-primary">View</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

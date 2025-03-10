@@ -61,12 +61,17 @@ elif [[ "$ZONE_CHECK" == *'"success":true'* ]]; then
     ZONE_ID=$(echo $ZONE_CHECK | grep -o '"id":"[^"]*' | cut -d'"' -f4)
     echo -e "Zone ID: ${ZONE_ID}"
     
-    # Check if we can list DNS records for this zone
+    # Check if we can list DNS records for this zone (with more verbose output)
     echo -e "\n${GREEN}Checking if we can list DNS records for this zone...${NC}"
-    DNS_LIST=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+    echo -e "Using URL: https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records"
+    echo -e "Headers: X-Auth-Email: ${CLOUDFLARE_EMAIL}, X-Auth-Key: ${CLOUDFLARE_API_KEY:0:5}..."
+    
+    DNS_LIST=$(curl -s -v -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
          -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
          -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
-         -H "Content-Type: application/json")
+         -H "Content-Type: application/json" 2>&1)
+    
+    echo -e "Raw response: $DNS_LIST"
     
     if [[ "$DNS_LIST" == *'"success":true'* ]]; then
         echo -e "${GREEN}Successfully listed DNS records!${NC}"
@@ -74,7 +79,50 @@ elif [[ "$ZONE_CHECK" == *'"success":true'* ]]; then
         echo -e "Found ${RECORD_COUNT} DNS records in this zone."
     else
         echo -e "${RED}Failed to list DNS records.${NC}"
-        echo -e "Error details: $DNS_LIST"
+        echo -e "${YELLOW}This could be due to:${NC}"
+        echo -e "1. API key permissions are insufficient (need 'DNS:Edit' permission)"
+        echo -e "2. The API key might be invalid or expired"
+        echo -e "3. Rate limiting or other Cloudflare API restrictions"
+    fi
+    
+    # Try creating a simple test record to verify write permissions
+    echo -e "\n${GREEN}Attempting to create a test DNS record...${NC}"
+    TEST_RECORD=$(curl -s -v -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+         -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+         -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+         -H "Content-Type: application/json" \
+         --data "{\"type\":\"TXT\",\"name\":\"test\",\"content\":\"API test record\",\"ttl\":1}" 2>&1)
+    
+    echo -e "Raw response: $TEST_RECORD"
+    
+    if [[ "$TEST_RECORD" == *'"success":true'* ]]; then
+        echo -e "${GREEN}Successfully created a test DNS record!${NC}"
+        echo -e "This confirms your API key has the proper permissions."
+        
+        # Get the record ID to delete it
+        RECORD_ID=$(echo $TEST_RECORD | grep -o '"id":"[^"]*' | cut -d'"' -f4)
+        
+        # Delete the test record
+        echo -e "\n${GREEN}Cleaning up the test record...${NC}"
+        DELETE_RECORD=$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}" \
+             -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+             -H "X-Auth-Key: ${CLOUDFLARE_API_KEY}" \
+             -H "Content-Type: application/json")
+        
+        if [[ "$DELETE_RECORD" == *'"success":true'* ]]; then
+            echo -e "${GREEN}Test record cleaned up successfully.${NC}"
+        else
+            echo -e "${YELLOW}Note: Could not clean up test record, but this is not critical.${NC}"
+        fi
+    else
+        echo -e "${RED}Failed to create a test DNS record.${NC}"
+        echo -e "${YELLOW}This confirms there is an issue with API permissions.${NC}"
+        echo -e "Please ensure your Cloudflare API key has the 'DNS:Edit' permission."
+        
+        echo -e "\n${YELLOW}API key troubleshooting:${NC}"
+        echo -e "1. Log in to your Cloudflare account"
+        echo -e "2. Navigate to My Profile > API Tokens"
+        echo -e "3. Verify your Global API Key or create a new API Token with Zone:DNS:Edit permission"
     fi
 else
     echo -e "${RED}Error checking zone:${NC}"
